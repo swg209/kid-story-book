@@ -39,7 +39,7 @@ export default function CharacterPage() {
       const response = await fetch(`/api/projects/${id}/character/generate`, {
         method: 'POST'
       })
-      
+
       if (response.ok) {
         const data = await response.json()
         setCharacter(prev => prev ? { ...prev, images: data.images } : null)
@@ -55,7 +55,7 @@ export default function CharacterPage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">加载中...</div>
+          <div className="text-fairytale-primary text-xl font-bold animate-bounce">加载中...</div>
         </div>
       </AppLayout>
     )
@@ -66,7 +66,7 @@ export default function CharacterPage() {
       <AppLayout>
         <div className="text-center py-12">
           <div className="text-gray-500">角色信息未找到</div>
-          <Link href="/dashboard" className="text-blue-600 hover:text-blue-500">
+          <Link href="/dashboard" className="text-fairytale-primary hover:text-fairytale-secondary font-bold">
             返回项目列表
           </Link>
         </div>
@@ -76,74 +76,75 @@ export default function CharacterPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-4xl mx-auto py-8">
+      <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="mb-8">
-          <Link 
+          <Link
             href={`/projects/${id}`}
-            className="text-blue-600 hover:text-blue-500 text-sm mb-4 inline-block"
+            className="text-fairytale-primary hover:text-fairytale-secondary text-sm mb-4 inline-flex items-center gap-1 font-bold transition-colors"
           >
             ← 返回项目
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">角色生成</h1>
-          <p className="text-gray-600">为您的绘本主角生成不同姿态的形象</p>
+          <h1 className="text-3xl font-bold text-fairytale-text mb-2 font-display">🎨 角色生成</h1>
+          <p className="text-gray-600 font-medium">为您的绘本主角生成不同姿态的形象</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">角色描述</h2>
-          <div className="text-gray-700 bg-gray-50 p-4 rounded-lg">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-fairytale-primary/20 p-8 mb-8">
+          <h2 className="text-xl font-bold text-fairytale-text mb-4 font-display">角色描述</h2>
+          <div className="text-gray-700 bg-white/50 p-6 rounded-2xl border-2 border-fairytale-secondary/30 font-medium leading-relaxed">
             {character.description}
           </div>
         </div>
 
         {!character.images || character.images.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-fairytale-primary/20 p-12">
             <div className="text-center">
-              <div className="text-gray-400 text-lg mb-4">
-                还未生成角色卡
+              <div className="text-6xl mb-6">✨</div>
+              <div className="text-gray-500 text-lg mb-8 font-medium">
+                还未生成角色卡，点击下方按钮开始施法！
               </div>
               <button
                 onClick={handleGenerateCharacter}
                 disabled={generating}
-                className="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                className="bg-fairytale-primary text-white px-10 py-4 rounded-full font-bold hover:bg-fairytale-secondary hover:scale-105 disabled:opacity-50 transition-all shadow-lg text-lg"
               >
-                {generating ? '生成中...' : '生成角色卡'}
+                {generating ? '✨ 正在施法...' : '✨ 生成角色卡'}
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">角色卡预览</h2>
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-fairytale-primary/20 p-8">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-xl font-bold text-fairytale-text font-display">角色卡预览</h2>
               <button
                 onClick={handleGenerateCharacter}
                 disabled={generating}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors text-sm"
+                className="bg-fairytale-accent text-white px-6 py-2 rounded-full font-bold hover:bg-fairytale-secondary hover:scale-105 disabled:opacity-50 transition-all shadow-md text-sm"
               >
-                {generating ? '重新生成中...' : '重新生成'}
+                {generating ? '✨ 重新施法...' : '🔄 重新生成'}
               </button>
             </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
               {character.images.map((imageUrl, index) => (
-                <div key={index} className="text-center">
-                  <div className="aspect-[2/3] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                <div key={index} className="text-center group">
+                  <div className="aspect-[2/3] bg-white rounded-2xl overflow-hidden mb-4 shadow-md border-4 border-white group-hover:scale-105 transition-transform duration-300">
                     <img
                       src={imageUrl}
                       alt={`角色姿态 ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="text-sm text-gray-600">姿态 {index + 1}</div>
+                  <div className="text-sm font-bold text-fairytale-text bg-white/50 inline-block px-3 py-1 rounded-full">姿态 {index + 1}</div>
                 </div>
               ))}
             </div>
 
-            <div className="mt-8 text-center">
+            <div className="mt-12 text-center">
               <Link
                 href={`/projects/${id}/story`}
-                className="bg-green-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                className="bg-fairytale-secondary text-green-800 px-10 py-4 rounded-full font-bold hover:bg-fairytale-accent hover:scale-105 transition-all shadow-lg text-lg inline-flex items-center gap-2"
               >
-                下一步：编写故事
+                <span>📝</span> 下一步：编写故事
               </Link>
             </div>
           </div>

@@ -25,7 +25,7 @@ export default function PagesPage() {
     if (id) {
       fetchPages()
     }
-    
+
     // 设置轮询检查生成状态
     const interval = setInterval(() => {
       if (generatingAll || Object.values(regenerating).some(Boolean)) {
@@ -103,7 +103,7 @@ export default function PagesPage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">加载中...</div>
+          <div className="text-fairytale-primary text-xl font-bold animate-bounce">加载中...</div>
         </div>
       </AppLayout>
     )
@@ -111,60 +111,59 @@ export default function PagesPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto py-8">
+      <div className="max-w-7xl mx-auto py-8 px-4">
         <div className="mb-8">
-          <Link 
+          <Link
             href={`/projects/${id}`}
-            className="text-blue-600 hover:text-blue-500 text-sm mb-4 inline-block"
+            className="text-fairytale-primary hover:text-fairytale-secondary text-sm mb-4 inline-flex items-center gap-1 font-bold transition-colors"
           >
             ← 返回项目
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">绘本插图</h1>
-          <p className="text-gray-600">预览和管理您的10页绘本插图</p>
+          <h1 className="text-3xl font-bold text-fairytale-text mb-2 font-display">🖼️ 绘本插图</h1>
+          <p className="text-gray-600 font-medium">预览和管理您的10页绘本插图</p>
         </div>
 
         {!pages || pages.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-gray-500 text-lg mb-4">
+          <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-fairytale-primary/20 p-12 text-center">
+            <div className="text-6xl mb-6">📝</div>
+            <div className="text-gray-500 text-lg mb-8 font-medium">
               还未生成分镜，请先完成故事分镜步骤
             </div>
             <Link
               href={`/projects/${id}/story`}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="bg-fairytale-primary text-white px-8 py-3 rounded-full font-bold hover:bg-fairytale-secondary hover:scale-105 transition-all shadow-lg text-lg inline-flex items-center gap-2"
             >
-              去生成分镜
+              <span>📝</span> 去生成分镜
             </Link>
           </div>
         ) : (
           <div className="flex flex-col lg:flex-row gap-8">
             {/* 左侧页码列表 */}
             <div className="lg:w-1/4">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <h3 className="font-semibold text-gray-900 mb-4">页面列表</h3>
-                <div className="space-y-2">
+              <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-fairytale-primary/20 p-6">
+                <h3 className="font-bold text-fairytale-text mb-4 font-display text-lg">页面列表</h3>
+                <div className="space-y-3">
                   {pages.map((page) => (
                     <button
                       key={page.pageIndex}
                       onClick={() => setSelectedPage(page.pageIndex)}
-                      className={`w-full flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
-                        selectedPage === page.pageIndex
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:bg-gray-50'
-                      }`}
+                      className={`w-full flex items-center space-x-3 p-3 rounded-xl border-2 transition-all ${selectedPage === page.pageIndex
+                          ? 'border-fairytale-primary bg-fairytale-primary/10 shadow-sm'
+                          : 'border-transparent hover:bg-white/50 hover:border-fairytale-secondary/30'
+                        }`}
                     >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                        page.status === 'done' ? 'bg-green-600 text-white' :
-                        page.status === 'generating' ? 'bg-yellow-600 text-white animate-pulse' :
-                        'bg-gray-300 text-gray-600'
-                      }`}>
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm ${page.status === 'done' ? 'bg-fairytale-secondary text-green-800' :
+                          page.status === 'generating' ? 'bg-yellow-100 text-yellow-800 animate-pulse' :
+                            'bg-gray-200 text-gray-500'
+                        }`}>
                         {page.pageIndex + 1}
                       </div>
                       <div className="flex-grow text-left">
-                        <div className="text-sm font-medium">第 {page.pageIndex + 1} 页</div>
-                        <div className="text-xs text-gray-500">
-                          {page.status === 'done' ? '已完成' :
-                           page.status === 'generating' ? '生成中' :
-                           page.status === 'error' ? '生成失败' : '待生成'}
+                        <div className="text-sm font-bold text-fairytale-text">第 {page.pageIndex + 1} 页</div>
+                        <div className="text-xs font-medium text-gray-500">
+                          {page.status === 'done' ? '✅ 已完成' :
+                            page.status === 'generating' ? '✨ 生成中' :
+                              page.status === 'error' ? '❌ 生成失败' : '⏳ 待生成'}
                         </div>
                       </div>
                     </button>
@@ -175,9 +174,9 @@ export default function PagesPage() {
                   <div className="mt-6">
                     <Link
                       href={`/projects/${id}/export`}
-                      className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors text-center block"
+                      className="w-full bg-fairytale-secondary text-green-800 px-4 py-3 rounded-full font-bold hover:bg-fairytale-accent hover:scale-105 transition-all shadow-md text-center block"
                     >
-                      导出绘本
+                      📥 导出绘本
                     </Link>
                   </div>
                 )}
@@ -187,9 +186,9 @@ export default function PagesPage() {
             {/* 右侧预览区 */}
             <div className="lg:w-3/4">
               {currentPage && (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border-2 border-fairytale-primary/20 p-8">
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-semibold text-gray-900">
+                    <h2 className="text-2xl font-bold text-fairytale-text font-display">
                       第 {currentPage.pageIndex + 1} 页
                     </h2>
                     <div className="flex space-x-3">
@@ -197,46 +196,46 @@ export default function PagesPage() {
                         <button
                           onClick={handleGenerateAll}
                           disabled={generatingAll}
-                          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                          className="bg-fairytale-primary text-white px-6 py-2 rounded-full font-bold hover:bg-fairytale-secondary hover:scale-105 disabled:opacity-50 transition-all shadow-md"
                         >
-                          {generatingAll ? '生成中...' : '生成整套绘本'}
+                          {generatingAll ? '✨ 生成中...' : '✨ 生成整套绘本'}
                         </button>
                       )}
                       {currentPage.status === 'done' && (
                         <button
                           onClick={() => handleRegenerate(currentPage.pageIndex)}
                           disabled={regenerating[currentPage.pageIndex]}
-                          className="bg-orange-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                          className="bg-fairytale-accent text-white px-6 py-2 rounded-full font-bold hover:bg-fairytale-secondary hover:scale-105 disabled:opacity-50 transition-all shadow-md"
                         >
-                          {regenerating[currentPage.pageIndex] ? '重生成中...' : '重生成此页'}
+                          {regenerating[currentPage.pageIndex] ? '✨ 重生成中...' : '🔄 重生成此页'}
                         </button>
                       )}
                     </div>
                   </div>
 
                   <div className="mb-6">
-                    <div className="text-sm font-medium text-gray-700 mb-2">分镜描述</div>
-                    <div className="bg-gray-50 p-4 rounded-lg text-gray-700">
+                    <div className="text-sm font-bold text-gray-500 mb-2 uppercase tracking-wider">分镜描述</div>
+                    <div className="bg-white/50 p-6 rounded-2xl border-2 border-fairytale-secondary/30 text-gray-700 font-medium leading-relaxed">
                       {currentPage.description}
                     </div>
                   </div>
 
-                  <div className="aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="aspect-[4/3] bg-white rounded-2xl overflow-hidden shadow-inner border-4 border-white relative">
                     {currentPage.status === 'generating' && (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+                      <div className="w-full h-full flex items-center justify-center bg-fairytale-background/50">
                         <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                          <div className="text-gray-600">AI 正在生成插图...</div>
+                          <div className="text-4xl animate-bounce mb-4">🎨</div>
+                          <div className="text-fairytale-primary font-bold text-lg">AI 正在施法绘制插图...</div>
                         </div>
                       </div>
                     )}
                     {currentPage.status === 'error' && (
                       <div className="w-full h-full flex items-center justify-center bg-red-50">
                         <div className="text-center">
-                          <div className="text-red-600 text-lg mb-2">生成失败</div>
+                          <div className="text-red-500 text-lg mb-2 font-bold">生成失败</div>
                           <button
                             onClick={() => handleRegenerate(currentPage.pageIndex)}
-                            className="text-blue-600 hover:text-blue-500 text-sm"
+                            className="text-fairytale-primary hover:text-fairytale-secondary font-bold underline"
                           >
                             重新生成
                           </button>
@@ -245,12 +244,13 @@ export default function PagesPage() {
                     )}
                     {currentPage.status === 'pending' && (
                       <div className="w-full h-full flex items-center justify-center bg-gray-50">
-                        <div className="text-center text-gray-500">
-                          <div>等待生成</div>
+                        <div className="text-center text-gray-400">
+                          <div className="text-4xl mb-4">⏳</div>
+                          <div className="font-medium">等待生成</div>
                           {pages.filter(p => p.status === 'done').length === 0 && (
                             <button
                               onClick={handleGenerateAll}
-                              className="text-blue-600 hover:text-blue-500 text-sm mt-2"
+                              className="text-fairytale-primary hover:text-fairytale-secondary font-bold text-sm mt-2 underline"
                             >
                               点击生成整套绘本
                             </button>
@@ -262,7 +262,7 @@ export default function PagesPage() {
                       <img
                         src={currentPage.imageUrl}
                         alt={`第 ${currentPage.pageIndex + 1} 页插图`}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                       />
                     )}
                   </div>

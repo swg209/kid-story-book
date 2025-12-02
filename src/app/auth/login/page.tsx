@@ -30,66 +30,78 @@ export default function LoginPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            登录您的账户
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="邮箱地址"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="密码"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
+      <div className="min-h-[80vh] flex items-center justify-center px-4 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-10 left-10 w-20 h-20 bg-fairytale-primary/30 rounded-full blur-2xl animate-float"></div>
+        <div className="absolute bottom-10 right-10 w-24 h-24 bg-fairytale-secondary/30 rounded-bubble animate-wiggle"></div>
 
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-
+        <div className="max-w-md w-full space-y-8 cartoon-card bg-gradient-to-br from-white/95 to-fairytale-background/80 backdrop-blur-cartoon p-10 rounded-3xl shadow-cartoon-lg border-4 border-fairytale-primary/30 transform hover:scale-105 transition-all duration-300">
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? '登录中...' : '登录'}
-            </button>
+            <div className="text-6xl text-center mb-4 animate-bounce-cartoon">🔑</div>
+            <h2 className="text-center text-cartoon-4xl font-cartoon text-fairytale-text emphasized-text rainbow-text">
+              🎉 欢迎回来 🎉
+            </h2>
+            <p className="mt-4 text-center text-cartoon-lg text-gray-700 font-playful leading-relaxed">
+              继续您的绘本创作之旅 📚✨
+            </p>
           </div>
+          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="email" className="sr-only">邮箱地址</label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="cartoon-input w-full px-6 py-4 text-cartoon-lg border-4 border-fairytale-secondary/50 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-4 focus:ring-fairytale-primary/50 focus:border-fairytale-primary transition-all bg-white/80 font-playful"
+                  placeholder="📧 邮箱地址"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="sr-only">密码</label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="cartoon-input w-full px-6 py-4 text-cartoon-lg border-4 border-fairytale-secondary/50 placeholder-gray-400 text-gray-900 rounded-2xl focus:outline-none focus:ring-4 focus:ring-fairytale-primary/50 focus:border-fairytale-primary transition-all bg-white/80 font-playful"
+                  placeholder="🔒 密码"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <div className="text-center">
-            <Link
-              href="/auth/signup"
-              className="text-blue-600 hover:text-blue-500"
-            >
-              还没有账户？立即注册
-            </Link>
-          </div>
-        </form>
+            {error && (
+              <div className="text-fairytale-danger text-cartoon-base text-center font-cartoon bg-fairytale-danger/20 py-3 px-4 rounded-2xl border-2 border-fairytale-danger/40 animate-shake">
+                ❌ {error}
+              </div>
+            )}
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="cartoon-button w-full py-4 px-6 text-cartoon-xl font-cartoon bg-linear-to-r from-fairytale-primary to-fairytale-purple rounded-full hover:from-fairytale-secondary hover:to-fairytale-accent disabled:opacity-50 shadow-cartoon-lg"
+              >
+                {loading ? '🔄 登录中... 🔄' : '🚀 登录 🚀'}
+              </button>
+            </div>
+
+            <div className="text-center pt-4">
+              <Link
+                href="/auth/signup"
+                className="text-cartoon-lg text-fairytale-primary hover:text-fairytale-secondary font-cartoon emphasized-text transition-all hover:scale-105 inline-block"
+              >
+                🌟 还没有账户？立即注册 🌟
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
     </AppLayout>
   )
 }

@@ -1,15 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
 
+// 使用统一的安全认证验证
+async function requireAuth(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Invalid or missing authorization token' }, { status: 401 })
+  }
+
+  const token = authHeader.substring(7)
+  const { data: { user }, error } = await supabase.auth.getUser(token)
+
+  if (error || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  return { user }
+}
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    
-    // 获取当前用户
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    // 使用统一认证验证
+    const authResult = await requireAuth(request)
+    if (authResult instanceof NextResponse) {
+      return authResult
     }
+    const { user } = authResult
 
     // 验证项目归属
     const { data: project, error: projectError } = await supabase

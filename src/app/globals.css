@@ -1,1 +1,126 @@
 @import "tailwindcss";
+
+/* Tailwind v4 配置区 
+  在这里定义的所有变量，都会自动生成对应的 class (如 bg-fairytale-primary)
+*/
+@theme {
+  /* === 颜色定义 === */
+  --color-fairytale-primary: #ff8b94;
+  --color-fairytale-secondary: #a8e6cf;
+  --color-fairytale-accent: #7fd6e1;
+  --color-fairytale-background: #fff8f3;
+  --color-fairytale-text: #2d3748;
+  --color-fairytale-danger: #ff6b6b;
+
+  /* === 字体定义 (对应 layout.tsx 里的变量名) === */
+  --font-cartoon: var(--font-fredoka), "Comic Sans MS", cursive;
+  --font-playful: var(--font-nunito), "Quicksand", sans-serif;
+
+  /* === 阴影定义 === */
+  --shadow-cartoon: 0 4px 0 rgba(0, 0, 0, 0.2), 0 8px 16px rgba(0, 0, 0, 0.1);
+  --shadow-cartoon-lg: 0 8px 0 rgba(0, 0, 0, 0.15),
+    0 16px 32px rgba(0, 0, 0, 0.1);
+
+  /* === 圆角定义 === */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  /* === 动画定义 === */
+  --animate-bounce-slow: bounce-cartoon 3s ease-in-out infinite;
+
+  @keyframes bounce-cartoon {
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    10% {
+      transform: translateY(-8px) rotate(-2deg);
+    }
+    30% {
+      transform: translateY(-6px) rotate(1deg);
+    }
+    60% {
+      transform: translateY(-4px) rotate(-1deg);
+    }
+  }
+}
+
+/* === 全局基础样式 === */
+body {
+  background-color: var(--color-fairytale-background);
+  /* ...背景图片代码保持不变... */
+
+  color: var(--color-fairytale-text);
+  font-family: var(--font-playful);
+
+  /* 🔥 新增：调大全局基础字号和行高 */
+  font-size: 1.125rem; /* 相当于 18px (默认是16px) */
+  line-height: 1.75; /* 增加行间距，让阅读更宽松 */
+}
+
+/* === 自定义组件类 (现在可以使用 @apply 了) === */
+
+/* 卡通按钮 */
+.cartoon-button {
+  /* 这里引用的名字必须和上面 @theme 里定义的一致 */
+  @apply bg-fairytale-primary text-white font-cartoon text-lg px-6 py-3 cursor-pointer inline-flex items-center justify-center;
+
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 9999px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-cartoon);
+}
+
+.cartoon-button:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-cartoon-lg);
+  /* 我们可以直接用 Tailwind 的颜色工具函数 */
+  background-color: oklch(
+    from var(--color-fairytale-primary) calc(l + 0.05) c h
+  );
+}
+
+.cartoon-button:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* 变体：次要按钮 */
+.cartoon-button-secondary {
+  @apply bg-fairytale-secondary text-fairytale-text;
+}
+
+/* 变体：强调按钮 */
+.cartoon-button-accent {
+  @apply bg-fairytale-accent text-white;
+}
+
+/* 卡通卡片 */
+.cartoon-card {
+  @apply bg-white border-4 border-fairytale-background;
+  border-radius: var(--radius-3xl);
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.cartoon-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* 卡通输入框 */
+.cartoon-input {
+  @apply w-full px-4 py-3 text-lg font-playful border-4 border-fairytale-secondary bg-white outline-none rounded-2xl transition-all;
+}
+
+.cartoon-input:focus {
+  @apply border-fairytale-accent;
+  box-shadow: 0 0 0 4px rgba(127, 214, 225, 0.3);
+  transform: scale(1.01);
+}
