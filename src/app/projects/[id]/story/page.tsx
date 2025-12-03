@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { supabase } from '@/lib/supabaseClient'
 import { Storyboard } from '@/types'
 
 interface StoryboardWithId extends Storyboard {
@@ -27,13 +28,29 @@ export default function StoryPage() {
 
   const fetchProjectData = async () => {
     try {
-      const response = await fetch(`/api/projects/${id}`)
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const data = await response.json()
         setStoryboards(data.storyboards || [])
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error fetching project data:', error)
+      router.push('/dashboard')
     } finally {
       setLoading(false)
     }
@@ -47,10 +64,18 @@ export default function StoryPage() {
 
     setGenerating(true)
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
       const response = await fetch(`/api/projects/${id}/story/generate-storyboard`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ story: story.trim() })
       })
@@ -77,10 +102,18 @@ export default function StoryPage() {
   const handleUpdateStoryboard = async (storyboardId: string, description: string) => {
     setSaving(prev => ({ ...prev, [storyboardId]: true }))
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
       const response = await fetch(`/api/projects/${id}/storyboards/${storyboardId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ description })
       })
@@ -92,6 +125,8 @@ export default function StoryPage() {
             sb.id === storyboardId ? { ...sb, description } : sb
           )
         )
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error updating storyboard:', error)
