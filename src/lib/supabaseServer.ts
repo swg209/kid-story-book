@@ -1,11 +1,19 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextRequest } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
 
 export async function createClient(req: NextRequest) {
-  // 为API路由创建Supabase中间件客户端
-  return createMiddlewareClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { req }
-  )
+  // 为API路由创建简单的Supabase客户端（带cookie支持）
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  const cookieStore = cookies()
+  const token = cookieStore.get('sb-access-token')?.value
+
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  })
 }

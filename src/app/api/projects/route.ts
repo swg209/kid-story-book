@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabaseServer'
+import { createClient } from '@/lib/supabaseSimple'
+import { Database } from '@/types'
+
+const supabase = createClient()
 
 export async function POST(request: NextRequest) {
   try {
     const { title, characterDescription, referenceImageUrl } = await request.json()
 
-    // 获取当前用户 - 使用服务端客户端
-    const supabase = await createClient(request)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // 获取当前用户 - 直接从请求中获取token
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Missing or invalid authorization header' }, { status: 401 })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+
+    // 验证用户token
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    if (error || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     // 创建项目
@@ -47,13 +57,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    // 获取当前用户 - 使用服务端客户端
-    const supabase = await createClient(request)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // 获取当前用户
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Missing or invalid authorization header' }, { status: 401 })
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error } = await supabase.auth.getUser(token)
+    if (error || !user) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     // 获取用户项目列表
