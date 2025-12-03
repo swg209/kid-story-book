@@ -36,7 +36,7 @@ export default function HomePage() {
             生成器 ✨
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-700 mb-12 font-playful leading-loose">
+          <div className="text-xl md:text-2xl text-gray-700 mb-12 font-playful leading-loose">
             🎨 让不会画画的家长/老师，也能用 AI 一键生成 🎨
             <br />
             {/* 标签组：增加间距，手机端自动换行 */}
@@ -51,14 +51,14 @@ export default function HomePage() {
                 📚 10页成套插图 📚
               </span>
             </div>
-          </p>
+          </div>
 
           <div className="space-y-6 sm:space-y-0 sm:space-x-8 sm:flex sm:justify-center">
             {user ? (
               <Link
                 href="/dashboard"
                 // 这里的类名已经在 globals.css 定义好了
-                className="cartoon-button bg-gradient-to-r from-fairytale-primary to-fairytale-purple"
+                className="cartoon-button bg-linear-to-r from-fairytale-primary to-fairytale-purple"
               >
                 📚 我的绘本 📚
               </Link>
@@ -66,7 +66,7 @@ export default function HomePage() {
               <>
                 <Link
                   href="/auth/signup"
-                  className="cartoon-button bg-gradient-to-r from-fairytale-primary to-fairytale-orange"
+                  className="cartoon-button bg-linear-to-r from-fairytale-primary to-fairytale-orange"
                 >
                   ✨ 开始创作 ✨
                 </Link>
