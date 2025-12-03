@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { supabase } from '@/lib/supabaseClient'
 import { Character } from '@/types'
 
 export default function CharacterPage() {
@@ -21,13 +22,32 @@ export default function CharacterPage() {
 
   const fetchCharacter = async () => {
     try {
-      const response = await fetch(`/api/projects/${id}`)
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const data = await response.json()
         setCharacter(data.character)
+      } else if (response.status === 401) {
+        router.push('/auth/login')
+      } else if (response.status === 404) {
+        // 项目不存在，可能是角色还没创建，尝试创建角色
+        router.push(`/projects/${id}/story`)
       }
     } catch (error) {
       console.error('Error fetching character:', error)
+      router.push('/dashboard')
     } finally {
       setLoading(false)
     }
@@ -36,13 +56,27 @@ export default function CharacterPage() {
   const handleGenerateCharacter = async () => {
     setGenerating(true)
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
       const response = await fetch(`/api/projects/${id}/character/generate`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
       })
 
       if (response.ok) {
         const data = await response.json()
         setCharacter(prev => prev ? { ...prev, images: data.images } : null)
+        // 重新获取完整的角色信息
+        fetchCharacter()
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error generating character:', error)
