@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@/lib/supabaseSimple'
+
+const supabase = createClient()
 
 // 使用统一的安全认证验证
 async function requireAuth(request: NextRequest) {

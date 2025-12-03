@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { supabase } from '@/lib/supabaseClient'
 import { Project, Character, Storyboard, Page } from '@/types'
 
 interface ProjectDetails {
@@ -27,10 +28,25 @@ export default function ProjectPage() {
 
   const fetchProjectDetails = async () => {
     try {
-      const response = await fetch(`/api/projects/${id}`)
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`/api/projects/${id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const data: ProjectDetails = await response.json()
         setProjectDetails(data)
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       } else {
         router.push('/dashboard')
       }
