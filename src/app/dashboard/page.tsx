@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { AuthGuard } from '@/components/layout/AuthGuard'
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'
+import { supabase } from '@/lib/supabaseClient'
 import { Project } from '@/types'
 
 interface ProjectListResponse {
@@ -24,7 +25,18 @@ export default function DashboardPage() {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('/api/projects')
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        return
+      }
+
+      const response = await fetch('/api/projects', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
       if (response.ok) {
         const data: ProjectListResponse = await response.json()
         setProjects(data.projects)

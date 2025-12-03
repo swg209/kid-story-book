@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function NewProjectPage() {
   const [title, setTitle] = useState('')
@@ -22,10 +23,19 @@ export default function NewProjectPage() {
     setError('')
 
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        setError('请先登录')
+        router.push('/auth/login')
+        return
+      }
+
       const response = await fetch('/api/projects', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           title: title.trim(),
