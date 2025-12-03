@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { title, characterDescription, referenceImageUrl } = await request.json()
 
     // 获取当前用户 - 使用服务端客户端
-    const supabase = await createClient()
+    const supabase = await createClient(request)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // 获取当前用户 - 使用服务端客户端
-    const supabase = await createClient()
+    const supabase = await createClient(request)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
