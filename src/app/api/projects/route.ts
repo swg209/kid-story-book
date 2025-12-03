@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabaseSimple'
-import { Database } from '@/types'
 
 const supabase = createClient()
 
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // 获取当前用户
     const authHeader = request.headers.get('authorization')
@@ -66,20 +65,20 @@ export async function GET() {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error } = await supabase.auth.getUser(token)
-    if (error || !user) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    if (authError || !user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
     // 获取用户项目列表
-    const { data: projects, error } = await supabase
+    const { data: projects, error: fetchError } = await supabase
       .from('projects')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+    if (fetchError) {
+      return NextResponse.json({ error: fetchError.message }, { status: 500 })
     }
 
     return NextResponse.json({ projects })

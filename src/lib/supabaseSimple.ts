@@ -6,3 +6,6 @@ export function createSimpleClient() {
 
   return createClient(supabaseUrl, supabaseAnonKey)
 }
+
+// 导出为 createClient 以保持API一致性
+export { createSimpleClient as createClient }
