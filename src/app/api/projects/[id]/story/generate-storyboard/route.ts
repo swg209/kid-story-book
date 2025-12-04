@@ -79,13 +79,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .order('page_index', { ascending: true })
 
     if (insertError) {
+      console.error('分镜插入失败:', insertError)
       return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
-    return NextResponse.json({ 
-      storyboards: storyboards.map((sb, index) => ({
-        pageIndex: sb.page_index,
-        description: sb.description
+    console.log('✅ 分镜生成成功:', {
+      projectId: id,
+      storyboardCount: storyboards?.length || 0,
+      storyboards: storyboards?.map(sb => ({ id: sb.id, page_index: sb.page_index, description: sb.description.substring(0, 30) + '...' }))
+    })
+
+    return NextResponse.json({
+      storyboards: storyboards.map((sb) => ({
+        id: sb.id, // 返回数据库中的真实ID
+        project_id: sb.project_id,
+        page_index: sb.page_index, // 保持字段名称一致
+        description: sb.description,
+        created_at: sb.created_at
       }))
     })
   } catch (error) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { regeneratePageImage } from '@/lib/imageGeneration'
 
 // 使用统一的安全认证验证
 async function requireAuth(request: NextRequest) {
@@ -72,39 +73,81 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       .update({ status: 'generating' })
       .eq('id', page.id)
 
-    // TODO: 这里应该调用真实的AI图像生成API
-    // 目前先模拟生成过程，使用新的随机图片
-    setTimeout(async () => {
-      const newImageUrl = `https://picsum.photos/800/600?random=${Date.now()}`
-      
-      // 更新页面记录
+    // 调用真实的AI图像生成API
+  try {
+    console.log('🎨 开始重新生成绘本页面，页码:', page_index)
+
+    // 获取角色信息
+    const { data: character } = await supabase
+      .from('characters')
+      .select('description')
+      .eq('project_id', id)
+      .single()
+
+    // 构建生图提示词
+    const rolePrompt = character?.description
+      ? `绘本风格插图，包含主角：${character.description.substring(0, 50)}...。`
+      : '绘本风格彩色插图'
+
+    const prompt = `${rolePrompt}场景描述：${storyboard.description}。第${page_index + 1}页。适合儿童阅读的温馨画面。`
+
+    console.log('📝 重生页面的提示词:', prompt.substring(0, 100) + '...')
+
+    // 生成新图片
+    const newImageUrl = await regeneratePageImage(prompt)
+
+    // 更新页面记录
+    await supabase
+      .from('pages')
+      .update({
+        image_url: newImageUrl,
+        status: 'done',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', page.id)
+
+    // 检查是否所有页面都完成
+    const { data: allPages } = await supabase
+      .from('pages')
+      .select('status')
+      .eq('project_id', id)
+
+    if (allPages && allPages.every(p => p.status === 'done')) {
       await supabase
-        .from('pages')
-        .update({
-          image_url: newImageUrl,
-          status: 'done',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', page.id)
+        .from('projects')
+        .update({ status: 'done' })
+        .eq('id', id)
+    }
 
-      // 检查是否所有页面都完成
-      const { data: allPages } = await supabase
-        .from('pages')
-        .select('status')
-        .eq('project_id', id)
-
-      if (allPages && allPages.every(p => p.status === 'done')) {
-        await supabase
-          .from('projects')
-          .update({ status: 'done' })
-          .eq('id', id)
-      }
-    }, 1500) // 模拟1.5秒生成时间
-
-    return NextResponse.json({ 
+    console.log('✅ 页面重生成成功:', page_index)
+    return NextResponse.json({
       pageIndex: page_index,
-      status: 'generating'
+      status: 'done',
+      imageUrl: newImageUrl
     })
+
+  } catch (generationError) {
+    console.error('❌ 页面重生成失败:', page_index, generationError)
+
+    // 如果生成失败，更新状态为错误并使用占位符图片
+    const fallbackImageUrl = `https://picsum.photos/800/600?random=${Date.now()}`
+
+    await supabase
+      .from('pages')
+      .update({
+        image_url: fallbackImageUrl,
+        status: 'error',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', page.id)
+
+    return NextResponse.json({
+      error: 'AI生图服务暂时不可用，请稍后重试',
+      pageIndex: page_index,
+      status: 'error',
+      imageUrl: fallbackImageUrl
+    }, { status: 500 })
+  }
   } catch (error) {
     console.error('Error regenerating page:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

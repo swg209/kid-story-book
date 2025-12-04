@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabaseClient'
+import { generatePageImages } from '@/lib/imageGeneration'
+import { getSampleImageForDescription } from '@/lib/sampleImages'
 
 // 使用统一的安全认证验证
 async function requireAuth(request: NextRequest) {
@@ -93,19 +95,35 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: insertError.message }, { status: 500 })
     }
 
-    // TODO: 这里应该调用真实的AI图像生成API
-    // 目前先模拟生成过程，使用随机图片
-    setTimeout(async () => {
-      const mockImages = storyboards.map((_, index) => 
-        `https://picsum.photos/800/600?random=${index + 100}`
-      )
+    // 使用Gemini Imagen API生成绘本
+    try {
+      console.log('🎨 开始生成绘本页面图片，页面数量:', storyboards.length)
+      console.log('🤖 尝试使用Gemini Imagen API生成绘本')
 
-      // 更新页面记录，保存生成的图片URL
+      let generatedImages: string[]
+
+      try {
+        // 尝试使用Gemini Imagen生成图片
+        generatedImages = await generatePageImages(storyboards)
+        console.log('🎉 Gemini生成的绘本图片:', generatedImages.map((url, i) => `第${i+1}页: ${url.substring(0, 50)}...`))
+      } catch (apiError) {
+        console.error('❌ Gemini Imagen API调用失败:', apiError)
+        console.log('🔄 降级为案例图片模式')
+
+        // 如果API调用失败，为每个页面匹配最合适的案例图片
+        generatedImages = storyboards.map((storyboard, index) => {
+          const sampleImageUrl = getSampleImageForDescription(storyboard.description, index)
+          console.log(`📖 第${index + 1}页: ${storyboard.description.substring(0, 30)}... → ${sampleImageUrl.substring(0, 50)}...`)
+          return sampleImageUrl
+        })
+      }
+
+      // 更新页面记录，保存图片URL
       for (let i = 0; i < pages.length; i++) {
         await supabase
           .from('pages')
           .update({
-            image_url: mockImages[i],
+            image_url: generatedImages[i],
             status: 'done'
           })
           .eq('id', pages[i].id)
@@ -116,15 +134,51 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .from('projects')
         .update({ status: 'done' })
         .eq('id', id)
-    }, 2000) // 模拟2秒生成时间
 
-    return NextResponse.json({ 
-      pages: pages.map((page, index) => ({
-        pageIndex: page.page_index,
-        status: page.status,
-        imageUrl: null
-      }))
-    })
+      console.log('✅ 绘本页面图片生成完成，数量:', generatedImages.length)
+      console.log('🎉 成功创建绘本！')
+
+      return NextResponse.json({
+        pages: pages.map((page, index) => ({
+          pageIndex: page.page_index,
+          status: 'done',
+          imageUrl: generatedImages[index]
+        })),
+        source: generatedImages.some(img => img.startsWith('data:')) ? 'gemini' : 'samples'
+      })
+
+    } catch (generationError) {
+      console.error('❌ 绘本页面生成失败:', generationError)
+
+      // 如果生成失败，更新状态为错误并提供占位符图片
+      const fallbackImages = storyboards.map((_, index) =>
+        `https://picsum.photos/800/600?random=${index + 100}`
+      )
+
+      for (let i = 0; i < pages.length; i++) {
+        await supabase
+          .from('pages')
+          .update({
+            image_url: fallbackImages[i],
+            status: 'error'
+          })
+          .eq('id', pages[i].id)
+      }
+
+      await supabase
+        .from('projects')
+        .update({ status: 'error' })
+        .eq('id', id)
+
+      return NextResponse.json({
+        error: '绘本生成失败，请稍后重试',
+        pages: pages.map((page, index) => ({
+          pageIndex: page.page_index,
+          status: 'error',
+          imageUrl: fallbackImages[index]
+        }))
+      }, { status: 500 })
+    }
   } catch (error) {
     console.error('Error generating pages:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { supabase } from '@/lib/supabaseClient'
 
 interface ExportData {
   pageIndex: number
@@ -30,8 +31,20 @@ export default function ExportPage() {
 
   const fetchExportData = async () => {
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
       // 获取PNG导出数据
-      const response = await fetch(`/api/projects/${id}/export/png`)
+      const response = await fetch(`/api/projects/${id}/export/png`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const data = await response.json()
         setProjectTitle(data.title)
@@ -42,10 +55,16 @@ export default function ExportPage() {
         })))
       } else {
         // 如果没有完成，从pages获取数据
-        const pagesResponse = await fetch(`/api/projects/${id}/pages`)
+        const pagesResponse = await fetch(`/api/projects/${id}/pages`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
         if (pagesResponse.ok) {
           const data = await pagesResponse.json()
           setExportData(data.map((item: ExportData) => item))
+        } else if (pagesResponse.status === 401) {
+          router.push('/auth/login')
         }
       }
     } catch (error) {
@@ -58,7 +77,19 @@ export default function ExportPage() {
   const handleExportPNG = async () => {
     setExporting(prev => ({ ...prev, png: true }))
     try {
-      const response = await fetch(`/api/projects/${id}/export/png`)
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`/api/projects/${id}/export/png`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const data = await response.json()
 
@@ -71,6 +102,8 @@ export default function ExportPage() {
         })
 
         alert(`已打开 ${data.images.length} 张图片，您可以右键另存为\n未来将支持一键下载ZIP包`)
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error exporting PNG:', error)
@@ -83,21 +116,41 @@ export default function ExportPage() {
   const handleExportPDF = async () => {
     setExporting(prev => ({ ...prev, pdf: true }))
     try {
-      const response = await fetch(`/api/projects/${id}/export/pdf`)
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`/api/projects/${id}/export/pdf`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const blob = await response.blob()
         const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${projectTitle || '绘本'}.pdf`
-        document.body.appendChild(a)
-        a.click()
+
+        // 创建下载链接并提供直接下载
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${projectTitle || '绘本'}_绘本.html`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        // 清理URL对象
         window.URL.revokeObjectURL(url)
-        document.body.removeChild(a)
+
+        alert('PDF导出成功！\n浏览器已自动打开打印对话框，请选择"保存为PDF"来下载完整的绘本文件')
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error exporting PDF:', error)
-      alert('导出失败')
+      alert('PDF导出失败')
     } finally {
       setExporting(prev => ({ ...prev, pdf: false }))
     }

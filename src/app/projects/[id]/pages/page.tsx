@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { AppLayout } from '@/components/layout/AppLayout'
+import { supabase } from '@/lib/supabaseClient'
 
 interface PageWithDescription {
   pageIndex: number
@@ -38,10 +39,24 @@ export default function PagesPage() {
 
   const fetchPages = async () => {
     try {
-      const response = await fetch(`/api/projects/${id}/pages`)
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
+      const response = await fetch(`/api/projects/${id}/pages`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
       if (response.ok) {
         const data = await response.json()
         setPages(data)
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error fetching pages:', error)
@@ -53,13 +68,27 @@ export default function PagesPage() {
   const handleGenerateAll = async () => {
     setGeneratingAll(true)
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
       const response = await fetch(`/api/projects/${id}/pages/generate-all`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
       })
 
       if (response.ok) {
         const data = await response.json()
+        console.log('📊 生成的页面数据:', data)
+        console.log('🔗 图片URL示例:', data.pages?.[0]?.imageUrl)
         setPages(data.pages)
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error generating pages:', error)
@@ -82,12 +111,24 @@ export default function PagesPage() {
   const handleRegenerate = async (pageIndex: number) => {
     setRegenerating(prev => ({ ...prev, [pageIndex]: true }))
     try {
+      // 获取当前用户session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        router.push('/auth/login')
+        return
+      }
+
       const response = await fetch(`/api/projects/${id}/pages/${pageIndex}/regenerate`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
       })
 
       if (response.ok) {
         fetchPages()
+      } else if (response.status === 401) {
+        router.push('/auth/login')
       }
     } catch (error) {
       console.error('Error regenerating page:', error)

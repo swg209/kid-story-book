@@ -58,7 +58,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: pagesError.message }, { status: 500 })
     }
 
+    console.log('📊 获取页面数据:', {
+      projectId: id,
+      storyboardsCount: storyboards?.length || 0,
+      pagesCount: pages?.length || 0,
+      storyboards: storyboards?.map(sb => ({ id: sb.id, page_index: sb.page_index, description: sb.description.substring(0, 30) + '...' }))
+    })
+
     if (storyboardError) {
+      console.error('获取分镜数据失败:', storyboardError)
       return NextResponse.json({ error: storyboardError.message }, { status: 500 })
     }
 
@@ -71,6 +79,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         imageUrl: page?.image_url || null,
         status: page?.status || 'pending'
       }
+    })
+
+    console.log('📋 合并后数据:', {
+      combinedCount: combinedData.length,
+      firstItem: combinedData[0] || null
     })
 
     return NextResponse.json(combinedData)

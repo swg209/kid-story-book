@@ -82,14 +82,8 @@ export default function StoryPage() {
 
       if (response.ok) {
         const data = await response.json()
-        // 添加新的分镜，但需要获取完整信息（包括id）
-        setStoryboards(data.storyboards.map((sb: any, index: number) => ({
-          id: `temp-${index}`, // 临时ID，实际应该从后端返回
-          project_id: id as string,
-          page_index: sb.pageIndex,
-          description: sb.description,
-          created_at: new Date().toISOString()
-        })))
+        // 使用后端返回的真实数据
+        setStoryboards(data.storyboards)
       }
     } catch (error) {
       console.error('Error generating storyboard:', error)
