@@ -5,6 +5,7 @@
 
 import { getSampleImageForDescription } from './sampleImages'
 import { getOrUploadImage, uploadMultipleImages } from './storage'
+import { PROMPT_PAGE_GENERATION, PROMPT_CHARACTER_MULTI_ANGLE, PromptUtils } from './prompts'
 
 interface ImageGenerationOptions {
   prompt: string
@@ -31,11 +32,15 @@ export async function generateImage(options: ImageGenerationOptions): Promise<st
     console.log('📏 图像尺寸:', width, 'x', height)
     console.log('🔢 生成数量:', count)
 
-    // 构建请求体 - 适配儿童绘本风格，移除不支持的negativePrompt参数
+    // 使用标准化的提示词系统
+    const standardizedPrompt = PromptUtils.cleanPrompt(prompt)
+    console.log('🎨 标准化后的提示词:', standardizedPrompt)
+
+    // 构建请求体 - 使用统一风格
     const requestBody = {
       instances: [
         {
-          prompt: `${prompt}，儿童绘本插画风格，温馨可爱，色彩鲜艳，简洁背景，适合3岁小朋友，卡通风格，无复杂背景，避免恐怖、暴力、黑暗元素`
+          prompt: standardizedPrompt
         }
       ],
       parameters: {
@@ -127,14 +132,8 @@ export async function generateImage(options: ImageGenerationOptions): Promise<st
 export async function generateCharacterImage(characterDescription: string): Promise<string[]> {
   console.log('👥 开始生成角色图像，角色描述:', characterDescription)
 
-  const characterPrompts = [
-    `${characterDescription}全身像，简单背景，儿童绘本风格`,
-    `${characterDescription}半身像，微笑表情，友好可爱，儿童绘本风格`,
-    `${characterDescription}侧面像，玩耍姿势，动态感，儿童绘本风格`,
-    `${characterDescription}背影，可爱造型，温馨色彩，儿童绘本风格`,
-    `${characterDescription}正面像，惊讶表情，卡通风格，色彩鲜艳`,
-    `${characterDescription}坐姿，阅读或玩耍姿势，温馨场景，儿童绘本风格`
-  ]
+  // 使用标准化的角色多角度提示词
+  const characterPrompts = PROMPT_CHARACTER_MULTI_ANGLE(characterDescription)
 
   try {
     const allImages: string[] = []
@@ -282,6 +281,126 @@ export async function generateCharacterImageSingle(prompt: string): Promise<stri
   } else {
     // 如果生成失败，返回样例图片
     return getSampleImages(1)[0]
+  }
+}
+
+// 生成角色+场景组合图像（使用新提示词系统）
+export async function generateCharacterSceneImage(
+  characterDescription: string,
+  sceneDescription: string,
+  emotion?: string
+): Promise<string[]> {
+  console.log('🎬 开始生成角色场景组合图')
+  console.log('👤 角色描述:', characterDescription)
+  console.log('🌍 场景描述:', sceneDescription)
+  if (emotion) console.log('😊 情绪:', emotion)
+
+  // 使用标准化的提示词生成函数
+  const prompt = PromptUtils.createCharacterScene(
+    characterDescription,
+    sceneDescription,
+    emotion as any
+  )
+
+  try {
+    const images = await generateImage({
+      prompt,
+      width: 1024,
+      height: 1024,
+      count: 1
+    })
+
+    return images
+  } catch (error) {
+    console.error('❌ 角色场景图像生成失败:', error)
+    // 返回样例图片作为备用
+    return [getSampleImageForDescription(sceneDescription, 0)]
+  }
+}
+
+// 批量生成故事页面图像（增强版）
+export async function generateStoryPageImagesEnhanced(
+  storyboards: Array<{ description: string, page_index: number, text?: string }>,
+  characterDescription: string
+): Promise<string[]> {
+  console.log('📚 开始生成增强版故事页面插图，共', storyboards.length, '页')
+  console.log('👤 主角色描述:', characterDescription)
+
+  try {
+    const pageImages: string[] = []
+
+    for (let i = 0; i < storyboards.length; i++) {
+      const storyboard = storyboards[i]
+      console.log(`🎨 生成第 ${storyboard.page_index + 1} 页插图`)
+
+      try {
+        // 分析场景中的情绪
+        let emotion: 'happy' | 'sad' | 'surprised' | 'angry' | undefined
+        const sceneText = storyboard.text || storyboard.description
+
+        if (sceneText.includes('开心') || sceneText.includes('快乐') || sceneText.includes('高兴')) {
+          emotion = 'happy'
+        } else if (sceneText.includes('伤心') || sceneText.includes('难过') || sceneText.includes('哭')) {
+          emotion = 'sad'
+        } else if (sceneText.includes('惊讶') || sceneText.includes('意外') || sceneText.includes('吃惊')) {
+          emotion = 'surprised'
+        } else if (sceneText.includes('害怕') || sceneText.includes('恐惧') || sceneText.includes('紧张')) {
+          emotion = 'angry'
+        }
+
+        // 使用增强版生成函数
+        const images = await generateCharacterSceneImage(
+          characterDescription,
+          storyboard.description,
+          emotion
+        )
+
+        if (images && images.length > 0) {
+          const imageUrl = images[0]
+          if (imageUrl.startsWith('http')) {
+            pageImages.push(imageUrl)
+            console.log(`✅ 第 ${storyboard.page_index + 1} 页插图生成完成 (已上传到Storage)`)
+          } else {
+            // 上传到 Supabase Storage
+            const uploadResult = await getOrUploadImage(
+              imageUrl,
+              `page_${storyboard.page_index + 1}`,
+              'story-pages'
+            )
+            if (uploadResult.success && uploadResult.data) {
+              pageImages.push(uploadResult.data)
+              console.log(`✅ 第 ${storyboard.page_index + 1} 页插图生成完成 (已上传到Storage)`)
+            } else {
+              console.warn(`⚠️ 第 ${storyboard.page_index + 1} 页上传失败，使用原始数据`)
+              pageImages.push(imageUrl)
+            }
+          }
+        } else {
+          // 如果生成失败，使用样例图片
+          const sampleUrl = getSampleImageForDescription(storyboard.description, storyboard.page_index)
+          pageImages.push(sampleUrl)
+          console.log(`⚠️ 第 ${storyboard.page_index + 1} 页使用样例图片`)
+        }
+      } catch (error) {
+        console.error(`❌ 第 ${storyboard.page_index + 1} 页插图生成失败:`, error)
+        // 使用样例图片作为备用
+        const sampleUrl = getSampleImageForDescription(storyboard.description, storyboard.page_index)
+        pageImages.push(sampleUrl)
+      }
+
+      // 添加延迟避免API限制
+      if (i < storyboards.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+
+    console.log(`🎉 增强版故事页面插图生成完成，共 ${pageImages.length} 张`)
+    return pageImages
+
+  } catch (error) {
+    console.error('❌ 增强版故事页面插图生成整体失败:', error)
+    // 返回全部样例图片
+    return storyboards.map(storyboard => getSampleImageForDescription(storyboard.description, storyboard.page_index))
   }
 }
 
