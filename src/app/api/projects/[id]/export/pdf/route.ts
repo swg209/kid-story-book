@@ -3,11 +3,21 @@ import { supabase } from '@/lib/supabaseClient'
 
 // 生成HTML内容用于PDF导出
 function generatePDFHTML(title: string, pages: any[]): string {
+  // HTML转义函数，确保特殊字符正确显示
+  function escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
+
   // 确保标题和描述中的特殊字符能正确编码
-  const safeTitle = Buffer.from(title, 'utf8').toString('utf8')
+  const safeTitle = escapeHtml(title)
   const safePages = pages.map(page => ({
     ...page,
-    description: Buffer.from(page.description || '', 'utf8').toString('utf8')
+    description: escapeHtml(page.description || '')
   }))
 
   // 创建CSS样式 - 优化用于PDF打印
@@ -265,10 +275,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     // 生成优化的HTML内容用于PDF打印
     const htmlContent = generatePDFHTML(project.title || '绘本', pdfData)
 
-    return new Response(htmlContent, {
+    // 使用Buffer确保正确的UTF-8编码
+    const htmlBuffer = Buffer.from(htmlContent, 'utf-8')
+
+    return new Response(htmlBuffer, {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': `inline; filename="${project.title || '绘本'}.pdf"`
+        'Content-Disposition': `inline; filename="${encodeURIComponent(project.title || '绘本')}.pdf"`,
+        'Content-Length': htmlBuffer.length.toString()
       }
     })
   } catch (error) {
