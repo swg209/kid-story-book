@@ -4,6 +4,7 @@
  */
 
 import { getSampleImageForDescription } from './sampleImages'
+import { getOrUploadImage, uploadMultipleImages } from './storage'
 
 interface ImageGenerationOptions {
   prompt: string
@@ -69,9 +70,9 @@ export async function generateImage(options: ImageGenerationOptions): Promise<st
 
     // 检查响应结构
     if (data && data.predictions && Array.isArray(data.predictions) && data.predictions.length > 0) {
-      const images = data.predictions.map((prediction: any, index: number) => {
+      const base64Images = data.predictions.map((prediction: any, index: number) => {
         if (prediction && prediction.bytesBase64Encoded) {
-          // 将base64图像数据转换为URL
+          // 将base64图像数据转换为 data URL
           const imageData = `data:image/png;base64,${prediction.bytesBase64Encoded}`
           console.log(`✅ 图像 ${index + 1} 生成成功 (base64格式)`)
           return imageData
@@ -81,8 +82,35 @@ export async function generateImage(options: ImageGenerationOptions): Promise<st
         }
       }).filter((url: string | null) => url !== null)
 
-      console.log(`🎉 成功生成 ${images.length} 张图像`)
-      return images
+      // 上传到 Supabase Storage
+      if (base64Images.length > 0) {
+        console.log('🔄 开始上传图片到 Supabase Storage...')
+
+        // 生成文件名前缀（基于提示词的前几个字符）
+        const fileNamePrefix = prompt.substring(0, 20).replace(/[^\w\u4e00-\u9fa5]/g, '_')
+
+        // 批量上传图片
+        const uploadResults = await uploadMultipleImages(
+          base64Images,
+          fileNamePrefix,
+          'generated'
+        )
+
+        // 提取成功的公共URL
+        const publicUrls = uploadResults
+          .filter(result => result.success && result.data)
+          .map(result => result.data!)
+
+        if (publicUrls.length > 0) {
+          console.log(`🎉 成功生成并上传 ${publicUrls.length} 张图像到 Supabase Storage`)
+          return publicUrls
+        } else {
+          console.warn('⚠️ 所有图片上传失败，返回原始 base64 数据')
+          return base64Images
+        }
+      }
+
+      return base64Images
     } else {
       console.warn('⚠️ API响应格式异常，使用备用图片:', data)
       return getSampleImages(count)
@@ -124,8 +152,26 @@ export async function generateCharacterImage(characterDescription: string): Prom
         })
 
         if (images && images.length > 0) {
-          allImages.push(images[0])
-          console.log(`✅ 角色角度 ${i + 1} 完成`)
+          // 检查是否已经是公共URL，如果不是则上传
+          const imageUrl = images[0]
+          if (imageUrl.startsWith('http')) {
+            allImages.push(imageUrl)
+            console.log(`✅ 角色角度 ${i + 1} 完成 (已上传到Storage)`)
+          } else {
+            // 上传到 Supabase Storage
+            const uploadResult = await getOrUploadImage(
+              imageUrl,
+              `character_angle_${i + 1}`,
+              'characters'
+            )
+            if (uploadResult.success && uploadResult.data) {
+              allImages.push(uploadResult.data)
+              console.log(`✅ 角色角度 ${i + 1} 完成 (已上传到Storage)`)
+            } else {
+              console.warn(`⚠️ 角色角度 ${i + 1} 上传失败，使用原始数据`)
+              allImages.push(imageUrl)
+            }
+          }
         } else {
           // 如果生成失败，使用样例图片
           const sampleUrl = getSampleImageForDescription(prompt, i)
@@ -175,8 +221,26 @@ export async function generatePageImages(storyboards: Array<{ description: strin
         })
 
         if (images && images.length > 0) {
-          pageImages.push(images[0])
-          console.log(`✅ 第 ${storyboard.page_index + 1} 页插图生成完成`)
+          // 检查是否已经是公共URL，如果不是则上传
+          const imageUrl = images[0]
+          if (imageUrl.startsWith('http')) {
+            pageImages.push(imageUrl)
+            console.log(`✅ 第 ${storyboard.page_index + 1} 页插图生成完成 (已上传到Storage)`)
+          } else {
+            // 上传到 Supabase Storage
+            const uploadResult = await getOrUploadImage(
+              imageUrl,
+              `page_${storyboard.page_index + 1}`,
+              'story-pages'
+            )
+            if (uploadResult.success && uploadResult.data) {
+              pageImages.push(uploadResult.data)
+              console.log(`✅ 第 ${storyboard.page_index + 1} 页插图生成完成 (已上传到Storage)`)
+            } else {
+              console.warn(`⚠️ 第 ${storyboard.page_index + 1} 页上传失败，使用原始数据`)
+              pageImages.push(imageUrl)
+            }
+          }
         } else {
           // 如果生成失败，使用样例图片
           const sampleUrl = getSampleImageForDescription(storyboard.description, storyboard.page_index)
@@ -213,7 +277,12 @@ export async function generateCharacterImageSingle(prompt: string): Promise<stri
     count: 1
   })
 
-  return images[0]
+  if (images && images.length > 0) {
+    return images[0]
+  } else {
+    // 如果生成失败，返回样例图片
+    return getSampleImages(1)[0]
+  }
 }
 
 // 重新生成单个页面图像（兼容旧接口）
